@@ -1,7 +1,7 @@
 import os
 from django.conf import settings
 from django.views import View
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import requests
 import json
 import tempfile
@@ -27,17 +27,16 @@ class AuthAPI(View):
         try:
             response = requests.post('https://slb.medv.ru/api/v2/', cert=(cert.name, key.name),
                                 data=json.dumps(payload), headers=headers)
-            if 'error' in response and response.json()['error']['message'] == 'Method not found':
-                response = 'Такого метода не существует!'
-                # Для вывода ошибки в консоль
-                print(response)
+
+            if 'error' in response.json() and response.json()['error']['message'] == 'Method not found':
+                response = 'Not found method - ' + str(response.json())
+                return JsonResponse({'answer': response})
         except requests.ConnectionError as Error:
-            response = 'Ошибка подключения к серверу: ' + str(Error)
-            # Для вывода ошибки в консоль
-            print(response)
+            response = 'Server connection error - ' + str(Error)
+            return JsonResponse({'answer': response})
         # Закрываем и удаляем все временные файлы
         key.close()
         cert.close()
         os.unlink(cert.name)
         os.unlink(key.name)
-        return HttpResponse(response)
+        return JsonResponse({'answer': response.json()})
