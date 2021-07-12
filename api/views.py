@@ -26,7 +26,7 @@ class AuthAPI(View):
 
         # Подключение к endpoint и обработка ошибок
         try:
-            connection = http.client.HTTPSConnection('slb.mefdv.ru', key_file=key.name, cert_file=cert.name)
+            connection = http.client.HTTPSConnection('slb.medv.ru', key_file=key.name, cert_file=cert.name)
             connection.request('POST', '/api/v2/', body=json.dumps(payload), headers=headers)
             response = connection.getresponse().read()
             response_json = json.loads(response.decode('utf8').replace("'", '"'))
@@ -43,5 +43,4 @@ class AuthAPI(View):
         cert.close()
         os.unlink(cert.name)
         os.unlink(key.name)
-        response_json = json.loads(response.decode('utf8').replace("'", '"'))
         return JsonResponse({'answer': response_json})
