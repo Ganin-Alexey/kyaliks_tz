@@ -25,16 +25,17 @@ class AuthAPI(View):
         key.read()
 
         # Подключение к endpoint и обработка ошибок
-        connection = http.client.HTTPSConnection('slb.medv.ru', key_file=key.name, cert_file=cert.name)
-        connection.request('POST', '/api/v2/', body=json.dumps(payload), headers=headers)
-        response = connection.getresponse().read()
-        response_json = json.loads(response.decode('utf8').replace("'", '"'))
         try:
+            connection = http.client.HTTPSConnection('slb.mefdv.ru', key_file=key.name, cert_file=cert.name)
+            connection.request('POST', '/api/v2/', body=json.dumps(payload), headers=headers)
+            response = connection.getresponse().read()
+            response_json = json.loads(response.decode('utf8').replace("'", '"'))
+
             if 'error' in response_json and response_json['error']['message'] == 'Method not found':
                 response_json = 'Not found method - ' + str(response_json)
                 return JsonResponse({'answer': response_json})
-        except ConnectionError as Error:
-            response_json = 'Server connection error - ' + str(Error)
+        except:
+            response_json = 'Server connection error'
             return JsonResponse({'answer': response_json})
 
         # Закрываем и удаляем все временные файлы
