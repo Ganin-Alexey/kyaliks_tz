@@ -1,10 +1,10 @@
 import os
 from django.conf import settings
 from django.views import View
-from django.http import HttpResponse, JsonResponse
-import requests
+from django.http import JsonResponse
 import json
 import tempfile
+import http.client
 
 
 class AuthAPI(View):
@@ -23,20 +23,24 @@ class AuthAPI(View):
         key.write(settings.CERTIFICATE_KEY)
         cert.read()
         key.read()
-        # Подключение к endpoint и обработка ошибок
-        try:
-            response = requests.post('https://slb.medv.ru/api/v2/', cert=(cert.name, key.name),
-                                data=json.dumps(payload), headers=headers)
 
-            if 'error' in response.json() and response.json()['error']['message'] == 'Method not found':
-                response = 'Not found method - ' + str(response.json())
-                return JsonResponse({'answer': response})
-        except requests.ConnectionError as Error:
-            response = 'Server connection error - ' + str(Error)
-            return JsonResponse({'answer': response})
+        # Подключение к endpoint и обработка ошибок
+        connection = http.client.HTTPSConnection('slb.medv.ru', key_file=key.name, cert_file=cert.name)
+        connection.request('POST', '/api/v2/', body=json.dumps(payload), headers=headers)
+        response = connection.getresponse().read()
+        response_json = json.loads(response.decode('utf8').replace("'", '"'))
+        try:
+            if 'error' in response_json and response_json['error']['message'] == 'Method not found':
+                response_json = 'Not found method - ' + str(response_json)
+                return JsonResponse({'answer': response_json})
+        except ConnectionError as Error:
+            response_json = 'Server connection error - ' + str(Error)
+            return JsonResponse({'answer': response_json})
+
         # Закрываем и удаляем все временные файлы
         key.close()
         cert.close()
         os.unlink(cert.name)
         os.unlink(key.name)
-        return JsonResponse({'answer': response.json()})
+        response_json = json.loads(response.decode('utf8').replace("'", '"'))
+        return JsonResponse({'answer': response_json})
