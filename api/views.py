@@ -32,7 +32,7 @@ class AuthAPI(View):
             response_json = json.loads(response.decode('utf8').replace("'", '"'))
 
             if 'error' in response_json and response_json['error']['message'] == 'Method not found':
-                response_json = 'Not found method - ' + str(response_json)
+                response_json = 'Not found method - ' + response_json
                 return JsonResponse({'answer': response_json})
         except:
             response_json = 'Server connection error'
